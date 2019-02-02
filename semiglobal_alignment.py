@@ -16,12 +16,12 @@ class NeedlemanWunsch():
         self.sequnce1 = sequnce1
         self.sequnce2 = sequnce2
         self.penalty = penalty
-        self.matrix = np.zeros((len(sequnce1) + 1, len(sequnce2) + 1), dtype=int)
-        self.h_values = np.zeros((3, len(sequnce1) + 1, len(sequnce2) + 1), dtype=int)
+        self.matrix = np.zeros((len(sequnce1) + 1, len(sequnce2) + 1), dtype=np.int32)
+        self.h_values = np.zeros((3, len(sequnce1) + 1, len(sequnce2) + 1), dtype=np.int32)
 
     #https://numba.pydata.org/numba-doc/latest/reference/pysupported.html
     #Koniecznie przeczytaj
-    @njit
+    @jit
     def _set_start_variables(self):
         self.matrix[0] = self.penalty * np.arange(0, self.matrix.shape[1])
         self.matrix[:, 0] = self.penalty * np.arange(0, self.matrix.shape[0])
@@ -114,9 +114,9 @@ except ValueError:
     sys.exit(0)
 
 
-@jit(nonpython=True)
+@njit
 def fill_matrix(matrix, h_values, seq1, seq2):
-    for i in tqdm(range(1, matrix.shape[0])):
+    for i in range(1, matrix.shape[0]):
         for j in range(1, matrix.shape[1]):
             h_values[0][i][j] = matrix[i - 1][j] - 1
             h_values[1][i][j] = matrix[i][j - 1] - 1
@@ -124,16 +124,25 @@ def fill_matrix(matrix, h_values, seq1, seq2):
                 h_values[2][i][j] = matrix[i - 1][j - 1] + 1
             else:
                 h_values[2][i][j] = matrix[i - 1][j - 1] - 1
-            matrix[i][j] = max(h_values[:, i, j])
+            matrix[i][j] = np.max(h_values[:, i, j])
 
+
+@njit
+def _set_start_variables(matrix, penalty):
+    matrix[0] = penalty * np.arange(0, matrix.shape[1])
+    matrix[:, 0] = penalty * np.arange(0, matrix.shape[0])
+    return matrix
 
 print(DNA_s.seq)
 print(DNA_t.seq)
 
 test = NeedlemanWunsch(DNA_s.seq, DNA_t.seq)
+print(str(DNA_s.seq))
+
+test.matrix = _set_start_variables(test.matrix, test.penalty)
 print(test.matrix.shape)
-test._set_start_variables()
-fill_matrix(test.matrix, test.h_values, test.sequnce1, test.sequnce2)
+fill_matrix(test.matrix, test.h_values, str(test.sequnce1), str(test.sequnce2))
 print(test.matrix)
+print(test.h_values)
 
 #print(pairwise2.align.globalxx(human_str, rat_str))
