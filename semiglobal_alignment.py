@@ -2,38 +2,34 @@ import numpy as np
 from Bio import pairwise2
 from Bio import SeqIO
 import sys
+from tqdm import tqdm
+from numba import jit, njit
 
 
-#Wywali substitution_matrix
 class NeedlemanWunsch():
-    def __init__(self, sequnce1, sequnce2, substitution_matrix, penalty=-1):
-        self.sequnce1 = sequnce1  # Indexowi litery w sekencji
-        self.sequnce2 = sequnce2  # opowiada index o 1 większy w tablicy
+
+    directions = {0: (-1, 0),
+                  1: (-1, -1),
+                  2: (0, -1)}
+
+    def __init__(self, sequnce1, sequnce2, penalty=-1):
+        self.sequnce1 = sequnce1
+        self.sequnce2 = sequnce2
         self.penalty = penalty
-        self.substitution_matrix = substitution_matrix
-        self.matrix = np.zeros((len(sequnce1) + 1, len(sequnce2) + 1))
-        #Co to jest?
-        self.directions = [[None for i in range(len(sequnce2) + 1)] \
-                           for j in range(len(sequnce1) + 1)]
+        self.matrix = np.zeros((len(sequnce1) + 1, len(sequnce2) + 1), dtype=int)
+        self.h_values = np.zeros((3, len(sequnce1) + 1, len(sequnce2) + 1), dtype=int)
 
-    #Chyba OK
+    #https://numba.pydata.org/numba-doc/latest/reference/pysupported.html
+    #Koniecznie przeczytaj
+    @njit
     def _set_start_variables(self):
-        self.matrix[0][0] = 0
-        for i in range(1, self.matrix.shape[0]):
-            self.matrix[i][0] = i * self.penalty
-        for i in range(1, self.matrix.shape[1]):
-            self.matrix[0][i] = i * self.penalty
+        self.matrix[0] = self.penalty * np.arange(0, self.matrix.shape[1])
+        self.matrix[:, 0] = self.penalty * np.arange(0, self.matrix.shape[0])
 
-    def _calculate_values(self, index_i, index_j):
-        temp_a = self.matrix[index_i - 1][index_j] + self.penalty
-        temp_b = self.matrix[index_i][index_j - 1] + self.penalty
-        try:
-            temp_c = self.matrix[index_i - 1][index_j - 1] \
-                     + self.substitution_matrix[
-                         (self.sequnce1[index_i - 1], self.sequnce2[index_j - 1])]
-        except KeyError:
-            temp_c = -np.inf
-        return [(temp_a, (-1, 0)), (temp_b, (0, -1)), (temp_c, (-1, -1))]
+
+    def _set_the_best_values(self, index_i, index_j):
+        pass
+
 
     def _find_the_best_fit(self, values):
         answer = [max(values)]
@@ -43,14 +39,18 @@ class NeedlemanWunsch():
                 answer.append(i)
         return answer
 
-    def start(self):
+    @jit(nonpython=True)
+    def fill_matrix(self):
         self._set_start_variables()
-        for i in range(1, self.matrix.shape[0]):
+        for i in tqdm(range(1, self.matrix.shape[0])):
             for j in range(1, self.matrix.shape[1]):
-                temp = self._calculate_values(i, j)
-                temp = self._find_the_best_fit(temp)
-                self.matrix[i, j] = temp[0][0]
-                self.directions[i][j] = [d[1] for d in temp]
+                self.h_values[0][i][j] = self.matrix[i - 1][j] + self.penalty
+                self.h_values[1][i][j] = self.matrix[i][j - 1] + self.penalty
+                if self.sequnce1[i - 1] == self.sequnce2[j - 1]:
+                    self.h_values[2][i][j] = self.matrix[i - 1][j - 1] + 1
+                else:
+                    self.h_values[2][i][j] = self.matrix[i - 1][j - 1] - 1
+                self.matrix[i][j] = max(self.h_values[:, i, j])
 
     #Co tu się dzieje???
     def _get_fit(self, index_i, index_j, number_of_fit, all_fit):
@@ -114,9 +114,26 @@ except ValueError:
     sys.exit(0)
 
 
+@jit(nonpython=True)
+def fill_matrix(matrix, h_values, seq1, seq2):
+    for i in tqdm(range(1, matrix.shape[0])):
+        for j in range(1, matrix.shape[1]):
+            h_values[0][i][j] = matrix[i - 1][j] - 1
+            h_values[1][i][j] = matrix[i][j - 1] - 1
+            if seq1[i - 1] == seq2[j - 1]:
+                h_values[2][i][j] = matrix[i - 1][j - 1] + 1
+            else:
+                h_values[2][i][j] = matrix[i - 1][j - 1] - 1
+            matrix[i][j] = max(h_values[:, i, j])
+
+
 print(DNA_s.seq)
 print(DNA_t.seq)
 
-NeedlemanWunsch.get_fit()
+test = NeedlemanWunsch(DNA_s.seq, DNA_t.seq)
+print(test.matrix.shape)
+test._set_start_variables()
+fill_matrix(test.matrix, test.h_values, test.sequnce1, test.sequnce2)
+print(test.matrix)
 
 #print(pairwise2.align.globalxx(human_str, rat_str))
