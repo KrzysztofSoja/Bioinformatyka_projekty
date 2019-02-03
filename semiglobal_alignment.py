@@ -8,16 +8,10 @@ from numba import jit, njit
 
 class NeedlemanWunsch():
 
-    directions = {0: (-1, 0),
-                  1: (-1, -1),
-                  2: (0, -1)}
+
 
     def __init__(self, sequnce1, sequnce2, penalty=-1):
-        self.sequnce1 = sequnce1
-        self.sequnce2 = sequnce2
-        self.penalty = penalty
-        self.matrix = np.zeros((len(sequnce1) + 1, len(sequnce2) + 1), dtype=np.int32)
-        self.h_values = np.zeros((3, len(sequnce1) + 1, len(sequnce2) + 1), dtype=np.int32)
+        pass
 
     #https://numba.pydata.org/numba-doc/latest/reference/pysupported.html
     #Koniecznie przeczytaj
@@ -99,19 +93,16 @@ class NeedlemanWunsch():
         print(str_seq2)
 
 
+directions = {0: (-1, 0),
+              1: (-1, -1),
+              2: (0, -1)}
+
+
 def read_data(path="/home/krzysztof/Pobrane/rosalind_smgb.txt"):
     records = []
     for record in SeqIO.parse(path, "fasta"):
         records.append(record)
     return records
-
-try:
-    DNA_s, DNA_t = read_data()
-except ValueError:
-    print("\nBłąd odczytu danych!\n"
-          "Możliwość znalezienia dopasowania tylko między dwoma sekwencjami! "
-          "Podaj prawidłowy format danych.")
-    sys.exit(0)
 
 
 @njit
@@ -128,21 +119,31 @@ def fill_matrix(matrix, h_values, seq1, seq2):
 
 
 @njit
-def _set_start_variables(matrix, penalty):
-    matrix[0] = penalty * np.arange(0, matrix.shape[1])
-    matrix[:, 0] = penalty * np.arange(0, matrix.shape[0])
+def set_start_variables(matrix, gap_penalty):
+    matrix[0] = gap_penalty * np.arange(0, matrix.shape[1])
+    matrix[:, 0] = gap_penalty * np.arange(0, matrix.shape[0])
     return matrix
 
-print(DNA_s.seq)
-print(DNA_t.seq)
 
-test = NeedlemanWunsch(DNA_s.seq, DNA_t.seq)
-print(str(DNA_s.seq))
+try:
+    DNA_s, DNA_t = read_data()
+except ValueError:
+    print("\nBłąd odczytu danych!\n"
+          "Możliwość znalezienia dopasowania tylko między dwoma sekwencjami! "
+          "Podaj prawidłowy format danych.")
+    sys.exit(0)
 
-test.matrix = _set_start_variables(test.matrix, test.penalty)
-print(test.matrix.shape)
-fill_matrix(test.matrix, test.h_values, str(test.sequnce1), str(test.sequnce2))
-print(test.matrix)
-print(test.h_values)
+
+seq_t = str(DNA_t.seq)
+seq_s = str(DNA_s.seq)
+gap_penalty = -1
+matrix = np.zeros((len(seq_t) + 1, len(seq_s) + 1), dtype=np.int32)
+h_values = np.zeros((3, len(seq_t) + 1, len(seq_s) + 1), dtype=np.int32)
+
+
+matrix = set_start_variables(matrix, gap_penalty)
+fill_matrix(matrix, h_values, seq_t, seq_s)
+print(matrix)
+print(h_values)
 
 #print(pairwise2.align.globalxx(human_str, rat_str))
