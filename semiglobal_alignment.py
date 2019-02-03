@@ -1,7 +1,7 @@
-import numpy as np
-from Bio import pairwise2
-from Bio import SeqIO
 import sys
+import os
+import numpy as np
+from Bio import SeqIO
 from numba import njit
 from timer import Timer
 
@@ -15,6 +15,16 @@ def read_data(path="/home/krzysztof/Pobrane/rosalind_smgb.txt"):
     for record in SeqIO.parse(path, "fasta"):
         records.append(record)
     return records
+
+
+def save_to_file(text, file_name='result'):
+    path = os.path.dirname(os.path.abspath(__file__))
+    itr = 0
+    while os.path.exists(path + "/" + file_name + str(itr)):
+        itr += 1
+    path = path + "/" + file_name + str(itr)
+    with open(path, "w+") as text_file:
+        print(text, file=text_file)
 
 
 @njit
@@ -32,19 +42,31 @@ def fill_matrix(matrix, h_values, seq1, seq2):
 
 def set_start_matrix(matrix, gap_penalty):
     matrix[0] = gap_penalty * np.arange(0, matrix.shape[1])
+    #  matrix[0] = np.zeros(matrix.shape[1])
     matrix[:, 0] = gap_penalty * np.arange(0, matrix.shape[0])
+    matrix[:, 0] = np.zeros(matrix.shape[0])
 
 
 def set_start_h_values(h_values):
     h_values[2][0] = np.ones((h_values.shape[2]))
 
 
+@njit
+def find_best_index(matrix):
+    index_i = np.argmax(matrix[:, -1])
+    index_j = np.argmax(matrix[-1])
+    if index_i < index_j:
+        index_i = matrix.shape[0] - 1
+    else:
+        index_j = matrix.shape[1] - 1
+    return index_i, index_j
+
+
 def get_one_of_the_best(matrix, h_values, seq1, seq2):
     alignment1 = ""
     alignment2 = ""
-    index_i, index_j = matrix.shape
-    index_i -= 1
-    index_j -= 1
+    index_i, index_j = find_best_index(matrix)
+    max_score = matrix[index_i][index_j]
     index_seq1, index_seq2 = -1, -1
     path = np.argmax(h_values, axis=0)
     while not index_i == index_j == 0:
@@ -67,7 +89,7 @@ def get_one_of_the_best(matrix, h_values, seq1, seq2):
             alignment2 = seq2[index_seq2] + alignment2
             index_j += directions[choice][1]
             index_seq2 += directions[choice][1]
-    return alignment1, alignment2
+    return max_score, alignment1, alignment2
 
 
 try:
@@ -78,22 +100,27 @@ except ValueError:
           "Podaj prawidłowy format danych.")
     sys.exit(0)
 
-
 seq_t = "CAGCACTTGGATTCTCGG" #str(DNA_t.seq)
 seq_s = "CAGCGTGG" #str(DNA_s.seq)
+seq_s, seq_t = min(seq_t, seq_s), max(seq_t, seq_s)
 gap_penalty = -1
-matrix = np.zeros((len(seq_t) + 1, len(seq_s) + 1), dtype=np.int32)
-h_values = np.zeros((3, len(seq_t) + 1, len(seq_s) + 1), dtype=np.int32)
+matrix = np.zeros((len(seq_s) + 1, len(seq_t) + 1), dtype=np.int32)
+h_values = np.zeros((3, len(seq_s) + 1, len(seq_t) + 1), dtype=np.int32)
 
 with Timer() as t:
     set_start_matrix(matrix, gap_penalty)
     set_start_h_values(h_values)
-    fill_matrix(matrix, h_values, seq_t, seq_s)
-    alignment = get_one_of_the_best(matrix, h_values, seq_t, seq_s)
+    fill_matrix(matrix, h_values, seq_s, seq_t)
+    alignment = get_one_of_the_best(matrix, h_values, seq_s, seq_t)
 
 
 print('Czas zadania wyniósł: %.03f sec.' % t.interval)
+print(matrix)
 print(alignment[0])
 print(alignment[1])
-
+print(alignment[2])
+"""
+text_to_file = str(alignment[0]) + '\n' + alignment[1] + "\n" + alignment[2]
+save_to_file(text_to_file)
+"""
 #print(pairwise2.align.globalxx(human_str, rat_str))
