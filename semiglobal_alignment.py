@@ -118,7 +118,5 @@ with Timer() as t:
 assert len(alignment[1]) == len(alignment[2])
 print('Czas rozwiązywania zadania wyniósł: %.03f sec.' % t.interval)
 
-#text_to_file = str(alignment[0]) + '\n' + alignment[1] + "\n" + alignment[2]
-np.set_printoptions(threshold=np.inf)
-text_to_file = matrix
+text_to_file = str(alignment[0]) + '\n' + alignment[1] + "\n" + alignment[2]
 save_to_file(text_to_file)
