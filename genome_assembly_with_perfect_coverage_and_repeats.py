@@ -1,4 +1,5 @@
 import networkx as nx
+from timer import Timer
 
 
 def read_data(path="/home/krzysztof/Pobrane/rosalind_grep.txt"):
@@ -43,8 +44,11 @@ def build_circular_strings(graph, string, len, output=[]):
 data = read_data()
 data = data.split('\n')
 
-bruijn_graph = build_graph(data)
-cycles = build_circular_strings(bruijn_graph, data[0], len(data[0]))
-cycles = [cycle for cycle in cycles if len(cycle) == len(data)]
+with Timer() as t:
+    bruijn_graph = build_graph(data)
+    cycles = build_circular_strings(bruijn_graph, data[0], len(data[0]))
+    cycles = [cycle for cycle in cycles if len(cycle) == len(data)]
+
+print('Czas rozwiązywania zadania wyniósł: %.03f sec.' % t.interval)
 for cycle in cycles:
     print(cycle[:-1])
