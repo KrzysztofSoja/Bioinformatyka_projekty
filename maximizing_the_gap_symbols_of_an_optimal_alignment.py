@@ -48,4 +48,3 @@ with Timer() as t:
 
 print("Zadanie wykonane w czasie: %.3f sekund" % t.interval)
 print(int(gaps[-1][-1]))
-
