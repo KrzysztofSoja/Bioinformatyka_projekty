@@ -8,6 +8,11 @@ def read_data(path="/home/krzysztof/Pobrane/rosalind_grep.txt"):
 
 
 def build_graph(genomes):
+    """
+    Buduje graf de Bruijna. W wierzchołkach grafu znajdują się ciągi znakowe o jeden mniejsze niż fragmenty DNA.
+    :param genomes: Tablica fragmentów genotypu.
+    :return: Graf de Bruijna.
+    """
     graph = nx.MultiDiGraph()
     for genome in genomes[1:]:
         graph.add_edge(genome[:-1], genome[1:])
@@ -15,6 +20,17 @@ def build_graph(genomes):
 
 
 def build_circular_strings(graph, string, len, output=[]):
+    """
+    Znajduje wszystkie unikalne sekwencje, które można złożyć z podanych fragmentów. W tym celu odnajduje
+    wszystkie cykle Eulera występujące w grafie. Jako że liczba krawędzi między wierzchołkami jest nie wielka,
+    do tego celu wykorzystuje metodę brote force.
+    :param graph: Graf de Bruijna, przechowywany w klasie nx.MultiDiGraph
+    :param string: Inicjijemy fragmentem sekwencji, który powinien znaleść się na początku całej sekwencji.
+    :param len: Długość fragmentów genotypu.
+    :param output: Nie powinno się podawać argumentu. Służy do rekurencji.
+    :return: Tablica wszystkich zwierająca sekwencje uzyskane, przy sprawdzaniu wszystkich cykli w grafie. Żeby uzykać
+    pełne ciągi należy wybrać tylko te równe liczbie podanych sekwencji.
+    """
     node = string[1-len:]
     for neighbor in graph[node]:
         copy_graph = nx.MultiDiGraph(graph)

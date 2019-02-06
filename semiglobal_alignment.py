@@ -7,6 +7,11 @@ from timer import Timer
 
 
 def read_data(path="/home/krzysztof/Pobrane/rosalind_smgb.txt"):
+    """
+    Odczytuje dane z pliku.
+    :param path: Ścieżka do pliku.
+    :return: Zwraca tablice rekordów w formacie bibilioteki biopython.
+    """
     records = []
     for record in SeqIO.parse(path, "fasta"):
         records.append(record)
@@ -14,6 +19,12 @@ def read_data(path="/home/krzysztof/Pobrane/rosalind_smgb.txt"):
 
 
 def save_to_file(text, file_name='result'):
+    """
+    Zapisuje text do pliku file_name. Jeśli taki plik już istnieje, tworzy kolejny.
+    :param text: Zmienna string, która będzie zapisana w pliku
+    :param file_name: Nazwa pliku.
+    :return:
+    """
     path = os.path.dirname(os.path.abspath(__file__))
     itr = 0
     while os.path.exists(path + "/" + file_name + str(itr)):
@@ -25,6 +36,14 @@ def save_to_file(text, file_name='result'):
 
 @njit
 def fill_matrix(matrix, h_values, seq1, seq2):
+    """
+    Implementacja algorytmu Needlemana-Wunscha.
+    :param matrix: Tablica 2D o bokach o długości - długość porównychaych sekwencji + 1.
+    :param h_values: Tablica 3D przechowuje wyszystkie wartości funcki H. Po trzy dla każdego wiersza tablicy.
+    :param seq1: Porównywana sekwencja.
+    :param seq2: Porównywana sekwencja.
+    :return:
+    """
     for i in range(1, matrix.shape[0]):
         for j in range(1, matrix.shape[1]):
             h_values[0][i][j] = matrix[i - 1][j] - 1
@@ -37,6 +56,11 @@ def fill_matrix(matrix, h_values, seq1, seq2):
 
 
 def find_best_index(matrix):
+    """
+    Znajduje największą wartość w ostatniej kolumnie i ostatnim wierszy macierzy.
+    :param matrix: Przeszukiwana macierz.
+    :return: Indeksy komórki z największą wartością.
+    """
     index_i = np.argmax(matrix[:, -1])
     index_j = np.argmax(matrix[-1])
     if index_i < index_j:
@@ -48,6 +72,15 @@ def find_best_index(matrix):
 
 @njit
 def find_alignment(path, best_i, best_j, seq1, seq2):
+    """
+    Odnajduje najlepsze dopasowanie, zgodnie z algorytmem Needlemana_Wunscha.
+    :param path: Macierz, której komórki wskazują najlepsze kierunki poruszania się.
+    :param best_i: Index, od którego zaczyna się dopasowanie.
+    :param best_j: Index, od którego zaczyna się dopasowanie.
+    :param seq1: Porównywana sekwencja.
+    :param seq2: Porównywana sekwencja.
+    :return: Dwa stringi z optymalnym dopasowaniem.
+    """
     alignment1 = ""
     alignment2 = ""
 
@@ -86,6 +119,15 @@ def find_alignment(path, best_i, best_j, seq1, seq2):
 
 
 def get_one_of_the_best(matrix, h_values, seq1, seq2):
+    """
+    Funkcja odpala funkcję find_alignment. Zawiera inicjalizacjie path, która ze względu na użycie numby nie mogła znaleść się
+    w funkcji find_alignment
+    :param matrix: Wypełniona macierz Needlemana-Wunscha.
+    :param h_values: Wypełniona macierz z wartościami funkcji H.
+    :param seq1: Porównywana sekwencja.
+    :param seq2: Porównywana sekwencja.
+    :return:
+    """
     index_i, index_j = find_best_index(matrix)
     max_score = matrix[index_i][index_j]
 
@@ -107,7 +149,6 @@ except ValueError:
 
 seq_t = str(DNA_t.seq)
 seq_s = str(DNA_s.seq)
-gap_penalty = -1
 matrix = np.zeros((len(seq_s) + 1, len(seq_t) + 1), dtype=np.int32)
 h_values = np.zeros((3, len(seq_s) + 1, len(seq_t) + 1), dtype=np.int32)
 

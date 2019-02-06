@@ -5,6 +5,11 @@ from timer import Timer
 
 
 def read_data(path="/home/krzysztof/Pobrane/rosalind_mgap.txt"):
+    """
+    Odczytuje dane z pliku.
+    :param path: Ścieżka do pliku.
+    :return: Zwraca tablice rekordów w formacie bibilioteki biopython.
+    """
     records = []
     for record in SeqIO.parse(path, "fasta"):
         records.append(record)
@@ -13,6 +18,16 @@ def read_data(path="/home/krzysztof/Pobrane/rosalind_mgap.txt"):
 
 @njit
 def fill_matrix(score, gaps, seq1, seq2):
+    """
+    Wypełnia dwie macierze: score - zgodnie z algorytmem Needlemana-Wunscha oraz macierz gaps, której każda komórka
+    zawiera liczbę luk, które pojawieją się od punktu 0 0 do danej komórki macierzy.
+    :param score: Tablica 2D o bokach o długości - długość porównychaych sekwencji + 1. Z pierwszą kolumą oraz pierwszym wierszem
+    zainicjalizowanym odpowiednią wartością kary za przerwę.
+    :param gaps: Tablica 2D o bokach o długości - długość porównychaych sekwencji + 1.
+    :param seq1: Porównywana sekwencja.
+    :param seq2: Porównywana sekwencja.
+    :return:
+    """
     h_values = np.zeros((3,))
     for i in range(1, score.shape[0]):
         for j in range(1, score.shape[1]):

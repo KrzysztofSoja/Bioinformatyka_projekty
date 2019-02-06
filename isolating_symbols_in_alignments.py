@@ -26,7 +26,7 @@ def fill_matrix(matrix, seq1, seq2):
             matrix[i][j] = np.max(h_values)
 
 
-#@njit
+@njit
 def danied_equal_fill_matrix(matrix, seq1, seq2, d_index_i, d_index_j):
     h_values = np.zeros((3,))
     for i in range(1, matrix.shape[0]):
@@ -42,7 +42,7 @@ def danied_equal_fill_matrix(matrix, seq1, seq2, d_index_i, d_index_j):
             else:
                 matrix[i][j] = np.max(h_values)
 
-#@njit
+@njit
 def calculate_alignment_score(seq1, seq2):
     m_sum = np.zeros((len(seq1), len(seq2)))
     for i in range(0, m_sum.shape[0]):
@@ -50,8 +50,8 @@ def calculate_alignment_score(seq1, seq2):
             m = np.zeros((len(seq_t) + 1, len(seq_s) + 1))
             m[0] = -np.arange(0, m.shape[1])
             m[:, 0] = -np.arange(0, m.shape[0])
-            danied_equal_fill_matrix(m, seq1, seq2, i, j)
-            m_sum[i][j] = m[-1][-1]
+            danied_equal_fill_matrix(m, seq1, seq2, i+1, j+1)
+            m_sum[i][j] = m[i+1][j+1]
     return m_sum
 
 
